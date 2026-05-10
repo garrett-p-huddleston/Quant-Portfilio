@@ -122,12 +122,30 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── 1. Load data ──────────────────────────────────────────────────────────
+    _SYNTHETIC = Path("data/es_synthetic.csv")
+
     if args.csv:
         log.info("Loading data from %s", args.csv)
         raw_df = load_csv(args.csv)
     else:
         log.info("Fetching %s  %s → %s", config.ticker, args.start, args.end or "today")
-        raw_df = fetch_yfinance(config.ticker, args.start, args.end)
+        try:
+            raw_df = fetch_yfinance(config.ticker, args.start, args.end)
+        except Exception as exc:
+            if _SYNTHETIC.exists():
+                log.warning(
+                    "yfinance failed (%s). Falling back to %s. "
+                    "Pass --csv <file> to use your own data.",
+                    exc,
+                    _SYNTHETIC,
+                )
+                raw_df = load_csv(_SYNTHETIC)
+            else:
+                raise SystemExit(
+                    f"yfinance failed ({exc}) and no fallback data found.\n"
+                    f"Generate synthetic data with:  python generate_test_data.py\n"
+                    f"Then run:  python main.py --csv data/es_synthetic.csv"
+                ) from exc
 
     log.info(
         "Loaded %d rows  (%s → %s)",
