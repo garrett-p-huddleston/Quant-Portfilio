@@ -1,0 +1,7 @@
+/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+results/*.png
+results/*.csv
+.DS_Store
